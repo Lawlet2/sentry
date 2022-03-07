@@ -110,8 +110,10 @@ def update_or_create(
 
 
 def in_iexact(column: str, values: Any) -> Q:
-    """Operator to test if any of the given values are (case-insensitive)
-    matching to values in the given column."""
+    """
+    Operator to test if any of the given values are (case-insensitive)
+    matching to values in the given column.
+    """
     from operator import or_
 
     query = f"{column}__iexact"
@@ -120,8 +122,10 @@ def in_iexact(column: str, values: Any) -> Q:
 
 
 def in_icontains(column: str, values: Any) -> Q:
-    """Operator to test if any of the given values are (case-insensitively)
-    contained within values in the given column."""
+    """
+    Operator to test if any of the given values are (case-insensitively)
+    contained within values in the given column.
+    """
     from operator import or_
 
     query = f"{column}__icontains"

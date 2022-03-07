@@ -38,8 +38,7 @@ class OrganizationOnboardingTaskEndpoint(OrganizationEndpoint):
         ):
             return Response(status=422)
 
-        values = {}
-
+        values = {"user": request.user}
         if status:
             values["status"] = status
             values["date_completed"] = timezone.now()
@@ -49,10 +48,7 @@ class OrganizationOnboardingTaskEndpoint(OrganizationEndpoint):
         task, created = OrganizationOnboardingTask.objects.update_or_create(
             organization=organization,
             task=task_id,
-            defaults={
-                "user": request.user,
-                **values,
-            },
+            defaults=values,
         )
 
         if task or created:
