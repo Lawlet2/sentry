@@ -124,7 +124,7 @@ class MergeEventWebhook(Webhook):
         )[0]
 
         try:
-            PullRequest.create_or_save(
+            PullRequest.objects.update_or_create(
                 organization_id=organization.id,
                 repository_id=repo.id,
                 key=number,
