@@ -706,7 +706,7 @@ def update_groups(
     if result.get("hasSeen"):
         for group in group_list:
             if is_member_map.get(group.project_id):
-                instance, created = GroupSeen.objects.update_or_create(
+                GroupSeen.objects.update_or_create(
                     group=group,
                     user=acting_user,
                     project=project_lookup[group.project_id],

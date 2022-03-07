@@ -60,13 +60,13 @@ class OrganizationRecentSearchesEndpoint(OrganizationEndpoint):
         if serializer.is_valid():
             result = serializer.validated_data
 
-            created = RecentSearch.objects.update_or_create(
+            _, created = RecentSearch.objects.update_or_create(
                 organization=organization,
                 user=request.user,
                 type=result["type"],
                 query=result["query"],
                 defaults={"last_seen": timezone.now()},
-            )[1]
+            )
             if created:
                 remove_excess_recent_searches(organization, request.user, result["type"])
             status = 201 if created else 204
