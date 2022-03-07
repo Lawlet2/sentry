@@ -46,7 +46,7 @@ class OrganizationOnboardingTaskEndpoint(OrganizationEndpoint):
         if completion_seen:
             values["completion_seen"] = timezone.now()
 
-        rows_affected, created = OrganizationOnboardingTask.objects.update_or_create(
+        task, created = OrganizationOnboardingTask.objects.update_or_create(
             organization=organization,
             task=task_id,
             defaults={
@@ -55,7 +55,7 @@ class OrganizationOnboardingTaskEndpoint(OrganizationEndpoint):
             },
         )
 
-        if rows_affected or created:
+        if task or created:
             try_mark_onboarding_complete(organization.id)
 
         return Response(status=204)

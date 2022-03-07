@@ -119,7 +119,7 @@ def record_first_event(project, event, **kwargs):
     # If complete, pass (creation fails due to organization, task unique constraint)
     # If pending, update.
     # If does not exist, create.
-    rows_affected, created = OrganizationOnboardingTask.objects.update_or_create(
+    task, created = OrganizationOnboardingTask.objects.update_or_create(
         organization_id=project.organization_id,
         task=OnboardingTask.FIRST_EVENT,
         status=OnboardingTaskStatus.PENDING,
@@ -140,7 +140,7 @@ def record_first_event(project, event, **kwargs):
         )
         return
 
-    if rows_affected or created:
+    if task or created:
         analytics.record(
             "first_event.sent",
             user_id=user.id,
@@ -159,7 +159,7 @@ def record_first_event(project, event, **kwargs):
 
     # Only counts if it's a new project
     if oot.project_id != project.id:
-        rows_affected, created = OrganizationOnboardingTask.objects.update_or_create(
+        task, created = OrganizationOnboardingTask.objects.update_or_create(
             organization_id=project.organization_id,
             task=OnboardingTask.SECOND_PLATFORM,
             status=OnboardingTaskStatus.PENDING,
@@ -170,7 +170,7 @@ def record_first_event(project, event, **kwargs):
                 "data": {"platform": event.platform},
             },
         )
-        if rows_affected or created:
+        if task or created:
             analytics.record(
                 "second_platform.added",
                 user_id=user.id,
@@ -225,7 +225,7 @@ def record_member_invited(member, user, **kwargs):
 
 @member_joined.connect(weak=False)
 def record_member_joined(member, organization, **kwargs):
-    rows_affected, created = OrganizationOnboardingTask.objects.update_or_create(
+    task, created = OrganizationOnboardingTask.objects.update_or_create(
         organization_id=member.organization_id,
         task=OnboardingTask.INVITE_MEMBER,
         status=OnboardingTaskStatus.PENDING,
@@ -235,7 +235,7 @@ def record_member_joined(member, organization, **kwargs):
             "data": {"invited_member_id": member.id},
         },
     )
-    if created or rows_affected:
+    if task or created:
         try_mark_onboarding_complete(member.organization_id)
 
 
@@ -371,7 +371,7 @@ def record_plugin_enabled(plugin, project, user, **kwargs):
 
 @alert_rule_created.connect(weak=False)
 def record_alert_rule_created(user, project, rule, **kwargs):
-    rows_affected, created = OrganizationOnboardingTask.objects.update_or_create(
+    task, created = OrganizationOnboardingTask.objects.update_or_create(
         organization_id=project.organization_id,
         task=OnboardingTask.ALERT_RULE,
         defaults={
@@ -382,13 +382,13 @@ def record_alert_rule_created(user, project, rule, **kwargs):
         },
     )
 
-    if rows_affected or created:
+    if task or created:
         try_mark_onboarding_complete(project.organization_id)
 
 
 @issue_tracker_used.connect(weak=False)
 def record_issue_tracker_used(plugin, project, user, **kwargs):
-    rows_affected, created = OrganizationOnboardingTask.objects.update_or_create(
+    task, created = OrganizationOnboardingTask.objects.update_or_create(
         organization_id=project.organization_id,
         task=OnboardingTask.ISSUE_TRACKER,
         status=OnboardingTaskStatus.PENDING,
@@ -401,7 +401,7 @@ def record_issue_tracker_used(plugin, project, user, **kwargs):
         },
     )
 
-    if rows_affected or created:
+    if task or created:
         try_mark_onboarding_complete(project.organization_id)
 
     if user and user.is_authenticated:
