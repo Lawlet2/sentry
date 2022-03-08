@@ -36,12 +36,12 @@ class PullRequest(Model):
     @classmethod
     def create_or_save(cls, organization_id, repository_id, key, values):
         """
-        Wraps create_or_update and ensures post_save signals are fired
+        Wraps update_or_create and ensures post_save signals are fired
         for updated records as GroupLink functionality is dependent
         on signals being fired.
         """
-        affected, created = cls.objects.create_or_update(
-            organization_id=organization_id, repository_id=repository_id, key=key, values=values
+        affected, created = cls.objects.update_or_create(
+            organization_id=organization_id, repository_id=repository_id, key=key, defaults=values
         )
         if created is False:
             instance = cls.objects.get(

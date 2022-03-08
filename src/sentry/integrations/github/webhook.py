@@ -409,7 +409,7 @@ class PullRequestEventWebhook(Webhook):
                 organization_id=organization.id,
                 repository_id=repo.id,
                 key=number,
-                values={
+                defaults={
                     "organization_id": organization.id,
                     "title": title,
                     "author": author,

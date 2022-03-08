@@ -82,10 +82,10 @@ class PullRequestEventWebhook(Webhook):
                 )
 
         try:
-            PullRequest.objects.create_or_update(
+            PullRequest.objects.update_or_create(
                 repository_id=repo.id,
                 key=number,
-                values={
+                defaults={
                     "organization_id": organization.id,
                     "title": title,
                     "author": author,

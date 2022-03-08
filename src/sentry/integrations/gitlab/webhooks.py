@@ -128,7 +128,7 @@ class MergeEventWebhook(Webhook):
                 organization_id=organization.id,
                 repository_id=repo.id,
                 key=number,
-                values={
+                defaults={
                     "title": title,
                     "author": author,
                     "message": body,

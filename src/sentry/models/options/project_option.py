@@ -46,7 +46,7 @@ class ProjectOptionManager(OptionManager["Project"]):
         self.reload_cache(project.id, "projectoption.unset_value")
 
     def set_value(self, project: Project, key: str, value: Value) -> bool:
-        inst, created = self.create_or_update(project=project, key=key, values={"value": value})
+        inst, created = self.update_or_create(project=project, key=key, defaults={"value": value})
         self.reload_cache(project.id, "projectoption.set_value")
 
         # Explicitly typing to satisfy mypy.

@@ -163,7 +163,7 @@ class SentryAppInstallation(ParanoidModel):
             values = []
         try:
             sentry_app_components.Preparer.run(
-                component=component, install=self, project=project, values=values
+                component=component, install=self, project=project, defaults=values
             )
             return component
         except APIError:
