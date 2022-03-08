@@ -1,3 +1,4 @@
+import itertools
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Callable, Dict, List, MutableMapping, Optional, Sequence, Union, cast
@@ -21,6 +22,7 @@ from sentry.models import (
     UserEmail,
     UserOption,
     UserPermission,
+    UserRoleUser,
 )
 from sentry.utils.avatar import get_gravatar_url
 
@@ -215,6 +217,10 @@ class DetailedUserSerializerResponse(UserSerializerResponse):
 
 
 class DetailedUserSerializer(UserSerializer):
+    """
+    Return additional information for operating on behalf of a user, like their permissions.
+    """
+
     def get_attrs(self, item_list: Sequence[User], user: User) -> MutableMapping[User, Any]:
         attrs = super().get_attrs(item_list, user)
 
@@ -228,6 +234,12 @@ class DetailedUserSerializer(UserSerializer):
         permissions = manytoone_to_dict(
             UserPermission.objects.filter(user__in=item_list), "user_id"
         )
+        # XXX(dcramer): theres def a way to write this query using djangos awkward orm magic to cache it using `UserRole`
+        # but at least someone can understand this direction of access/optimization
+        roles = {
+            ur.user_id: ur.role.permissions
+            for ur in UserRoleUser.objects.filter(user__in=item_list).select_related("role")
+        }
 
         memberships = manytoone_to_dict(
             OrganizationMember.objects.filter(
@@ -238,7 +250,9 @@ class DetailedUserSerializer(UserSerializer):
 
         for item in item_list:
             attrs[item]["authenticators"] = authenticators[item.id]
-            attrs[item]["permissions"] = permissions[item.id]
+            attrs[item]["permissions"] = {p.permission for p in permissions[item.id]} | set(
+                itertools.chain(roles[item.id])
+            )
 
             # org can reset 2FA if the user is only in one org
             attrs[item]["canReset2fa"] = len(memberships[item.id]) == 1
@@ -250,22 +264,24 @@ class DetailedUserSerializer(UserSerializer):
     ) -> DetailedUserSerializerResponse:
         d = cast(DetailedUserSerializerResponse, super().serialize(obj, attrs, user))
 
-        # XXX(dcramer): we don't use is_active_superuser here as we simply
-        # want to tell the UI that we're an authenticated superuser, and
-        # for requests that require an *active* session, they should prompt
-        # on-demand. This ensures things like links to the Sentry admin can
-        # still easily be rendered.
-        d["isSuperuser"] = obj.is_superuser
-        d["permissions"] = [up.permission for up in attrs["permissions"]]
-        d["authenticators"] = [
-            {
-                "id": str(a.id),
-                "type": a.interface.interface_id,
-                "name": str(a.interface.name),
-                "dateCreated": a.created_at,
-                "dateUsed": a.last_used_at,
-            }
-            for a in attrs["authenticators"]
-        ]
-        d["canReset2fa"] = attrs["canReset2fa"]
+        # safety check to never return this informatoin if the acting user is not 1) this user, 2) an admin
+        if user.id == obj.id or user.is_superuser:
+            # XXX(dcramer): we don't use is_active_superuser here as we simply
+            # want to tell the UI that we're an authenticated superuser, and
+            # for requests that require an *active* session, they should prompt
+            # on-demand. This ensures things like links to the Sentry admin can
+            # still easily be rendered.
+            d["isSuperuser"] = obj.is_superuser
+            d["permissions"] = sorted(attrs["permissions"])
+            d["authenticators"] = [
+                {
+                    "id": str(a.id),
+                    "type": a.interface.interface_id,
+                    "name": str(a.interface.name),
+                    "dateCreated": a.created_at,
+                    "dateUsed": a.last_used_at,
+                }
+                for a in attrs["authenticators"]
+            ]
+            d["canReset2fa"] = attrs["canReset2fa"]
         return d

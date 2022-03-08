@@ -8,9 +8,9 @@ from sentry import ratelimits, roles
 from sentry.api.bases.organization import OrganizationEndpoint, OrganizationPermission
 from sentry.api.exceptions import ResourceDoesNotExist
 from sentry.api.serializers import (
-    DetailedUserSerializer,
     OrganizationMemberWithTeamsSerializer,
     RoleSerializer,
+    UserSerializer,
     serialize,
 )
 from sentry.api.serializers.rest_framework import ListField
@@ -120,7 +120,7 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
 
         if request.access.has_scope("member:admin"):
             context["invite_link"] = member.get_invite_link()
-            context["user"] = serialize(member.user, request.user, DetailedUserSerializer())
+            context["user"] = serialize(member.user, request.user, UserSerializer())
 
         context["isOnlyOwner"] = self.is_only_owner(member)
         context["roles"] = serialize(
